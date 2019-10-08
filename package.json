@@ -7,7 +7,12 @@
 		"Generic"
 	],
 	"manufacturer": "Generic",
-	"product": "SNMP",
+	"product": [
+		"SNMP",
+		"HP 1910",
+		"HP 1920",
+		"DGS-1210"
+	],
 	"shortname": "snmp",
 	"main": "index.js",
 	"scripts": {
