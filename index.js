@@ -165,11 +165,11 @@ class instance extends instance_skel {
 				});
 				break;
 			case 'generic_set':
-				opts.objectType = parseInt(opts.objectType);
+				var objectType = parseInt(opts.objectType);
 				oids.push({ 
 					oid: opts.oid,
-					type: opts.objectType,
-					value: this.formatValue(opts.objectType, opts.value)
+					type: objectType,
+					value: this.formatValue(objectType, opts.value)
 				});
 				break;
 		}
@@ -215,7 +215,7 @@ class instance extends instance_skel {
 		const result = []
 		for (let id in type) {
 			if (filter === undefined || filter(id)) {
-				result.push({ id: '' + type[id], label: id })
+				result.push({ id: ('' + type[id]), label: ('' + id) })
 			}
 		}
 		return result
@@ -231,6 +231,8 @@ class instance extends instance_skel {
 			case snmp.ObjectType.TimeTicks:
 			case snmp.ObjectType.Counter64:
 				return parseInt(value);
+			case snmp.ObjectType.Opaque:
+				return Buffer.from(value.replace(/\\x([0-9A-Fa-f]{2})/g, function() { return String.fromCharCode(parseInt(arguments[1], 16)); }), 'utf-8');
 			default:
 				return '' + value;
 		}
