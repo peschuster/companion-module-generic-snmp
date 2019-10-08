@@ -78,7 +78,7 @@ class instance extends instance_skel {
 				id: 'community',
 				width: 6,
 				label: 'SNMP Community',
-				default: 'public',
+				default: 'private',
 				required: true
 			},
 			{
