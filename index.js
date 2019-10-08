@@ -31,6 +31,8 @@ class instance extends instance_skel {
 			{ id: IF_ADMIN_STATE_DOWN, label: 'Disabled' }
 		];
 
+		this.choiceObjectType = this.buildList(snmp.ObjectType, v => !/(^\d+|NoSuch.+|End.+)$/.test(v + ''))
+
 		this.actions();
 	}
 
@@ -117,6 +119,31 @@ class instance extends instance_skel {
 						choices: this.choiceIfAdminState
 					}
 				]
+			},
+			'generic_set': {
+				label: 'Generic set-request',
+				options: [
+					{
+						type: 'textinput',
+						label: 'OID (e.g. 1.3.6.1.2)',
+						id: 'oid',
+						default: '',
+						regex: '/^\\d+(\\.\\d+)*$/'
+					},
+					{
+						type: 'dropdown',
+						label: 'Object type',
+						id: 'objectType',
+						default: '' + snmp.ObjectType.OctetString,
+						choices: this.choiceObjectType
+					},
+					{
+						type: 'textinput',
+						label: 'Value',
+						id: 'value',
+						default: ''
+					}
+				]
 			}
 		};
 
@@ -127,12 +154,22 @@ class instance extends instance_skel {
 		var self = this;
 		const oids = [];
 
+		const opts = action.options;
+
 		switch (action.action) {
 			case 'port_state':
 				oids.push({ 
-					oid: OID_PORT_ADMIN + '.' + action.options.port,
+					oid: OID_PORT_ADMIN + '.' + opts.port,
 					type: snmp.ObjectType.Integer,
-					value: parseInt(action.options.state)
+					value: parseInt(opts.state)
+				});
+				break;
+			case 'generic_set':
+				opts.objectType = parseInt(opts.objectType);
+				oids.push({ 
+					oid: opts.oid,
+					type: opts.objectType,
+					value: this.formatValue(opts.objectType, opts.value)
 				});
 				break;
 		}
@@ -171,6 +208,31 @@ class instance extends instance_skel {
 			this.status(this.STATUS_OK);
 		} else {
 			this.status(this.STATUS_ERROR, 'Undefined host, port or community');
+		}
+	}
+
+	buildList(type, filter = undefined) {
+		const result = []
+		for (let id in type) {
+			if (filter === undefined || filter(id)) {
+				result.push({ id: '' + type[id], label: id })
+			}
+		}
+		return result
+	}
+
+	formatValue(objectType, value) {
+		switch (objectType) {
+			case snmp.ObjectType.Boolean:
+				return  value ? true : false;
+			case snmp.ObjectType.Integer:
+			case snmp.ObjectType.Counter:
+			case snmp.ObjectType.Gauge:
+			case snmp.ObjectType.TimeTicks:
+			case snmp.ObjectType.Counter64:
+				return parseInt(value);
+			default:
+				return '' + value;
 		}
 	}
 }
