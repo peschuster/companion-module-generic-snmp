@@ -2,8 +2,9 @@ var instance_skel = require('../../instance_skel');
 var snmp = require ("net-snmp");
 
 const OID_PORT_ADMIN = '1.3.6.1.2.1.2.2.1.7'
-const IF_ADMIN_STATE_UP = '1'
-const IF_ADMIN_STATE_DOWN = '2'
+const OID_PORT_POE_ADMIN = '1.3.6.1.2.1.105.1.1.1.3.1'
+const MIB_TRUE = '1'
+const MIB_FALSE = '2'
 
 class instance extends instance_skel {
 
@@ -26,9 +27,9 @@ class instance extends instance_skel {
 			{ id: snmp.Version2c, label: 'SNMPv2c' }
 		];
 
-		this.choiceIfAdminState = [
-			{ id: IF_ADMIN_STATE_UP, label: 'Enabled' },
-			{ id: IF_ADMIN_STATE_DOWN, label: 'Disabled' }
+		this.choiceMibTrueFalse = [
+			{ id: MIB_TRUE, label: 'Enabled' },
+			{ id: MIB_FALSE, label: 'Disabled' }
 		];
 
 		this.choiceObjectType = this.buildList(snmp.ObjectType, v => !/(^\d+|NoSuch.+|End.+)$/.test(v + ''))
@@ -115,8 +116,29 @@ class instance extends instance_skel {
 						type: 'dropdown',
 						label: 'State',
 						id: 'state',
-						default: IF_ADMIN_STATE_UP,
-						choices: this.choiceIfAdminState
+						default: MIB_TRUE,
+						choices: this.choiceMibTrueFalse
+					}
+				]
+			},
+			'poe_state': {
+				label: 'Enable/Disable PoE on Port',
+				options: [
+					{
+						type: 'number',
+						label: 'Port',
+						id: 'port',
+						min: 1,
+						max: 65535,
+						default: 1,
+						required: true
+					},
+					{
+						type: 'dropdown',
+						label: 'State',
+						id: 'state',
+						default: MIB_TRUE,
+						choices: this.choiceMibTrueFalse
 					}
 				]
 			},
@@ -158,15 +180,22 @@ class instance extends instance_skel {
 
 		switch (action.action) {
 			case 'port_state':
-				oids.push({ 
+				oids.push({
 					oid: OID_PORT_ADMIN + '.' + opts.port,
+					type: snmp.ObjectType.Integer,
+					value: parseInt(opts.state)
+				});
+				break;
+			case 'poe_state':
+				oids.push({
+					oid: OID_PORT_POE_ADMIN + '.' + opts.port,
 					type: snmp.ObjectType.Integer,
 					value: parseInt(opts.state)
 				});
 				break;
 			case 'generic_set':
 				var objectType = parseInt(opts.objectType);
-				oids.push({ 
+				oids.push({
 					oid: opts.oid,
 					type: objectType,
 					value: this.formatValue(objectType, opts.value)
